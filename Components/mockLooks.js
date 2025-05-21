@@ -1,0 +1,58 @@
+export const mockLooks = [
+    {
+      id: 'look_spring_dawn',
+      title: 'Spring Dawn',
+      cover: require('../assets/cover.png'),
+      season: 'Spring',
+      styles: ['Classic', 'Romantic'],
+      bodyTypes: ['Hourglass'],
+      tags: ['Spring', 'Classic', 'Hourglass', 'Romantic'],
+      gallery: [
+        require('../assets/top.png'),
+        require('../assets/jeans.png'),
+        require('../assets/shoes.png'),
+      ],
+    },
+    {
+      id: 'look_winter_grunge',
+      title: 'Winter grunge style',
+      cover: require('../assets/cover2.png'),
+      season: 'Winter',
+      styles: ['Athleisure', 'Grunge'],
+      bodyTypes: ['Pear'],
+      tags: ['Winter', 'Athleisure', 'Grunge', 'Pear'],
+      gallery: [
+        require('../assets/jacket.png'),
+        require('../assets/jeans2.png'),
+        require('../assets/boots.png'),
+      ],
+    },
+    {
+      id: 'look_autumn_cozy',
+      title: 'Autumn coziness',
+      cover: require('../assets/cover3.png'),
+      season: 'Fall',
+      styles: ['Classic'],
+      bodyTypes: ['Rectangle'],
+      tags: ['Fall', 'Classic', 'Rectangle'],
+      gallery: [
+        require('../assets/blazer.png'),
+        require('../assets/pants.png'),
+        require('../assets/shoes1.png'),
+      ],
+    },
+    {
+      id: 'look_minimalism_action',
+      title: 'Minimalism in action',
+      cover: require('../assets/cover4.png'),
+      season: 'Summer',
+      styles: ['Boho'],
+      bodyTypes: ['Apple'],
+      tags: ['Summer', 'Boho', 'Apple'],
+      gallery: [
+        require('../assets/dress.png'),
+        require('../assets/hat.png'),
+        require('../assets/sandals.png'),
+      ],
+    },
+  ];
