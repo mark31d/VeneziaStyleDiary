@@ -1,14 +1,11 @@
-// ──────────────────────────────────────────────────────────────
-//  src/Components/ArticlesContext.js
-//  Глобальный контекст «Полезные статьи»
-// ──────────────────────────────────────────────────────────────
+// src/Components/ArticlesContext.js
 import React, { createContext, useContext, useState } from 'react';
 
 const ArticlesContext = createContext();
 export const useArticles = () => useContext(ArticlesContext);
 
 export function ArticlesProvider({ children }) {
-  const [articles] = useState([
+  const [articles, setArticles] = useState([
     /* 1. Seasonal Fashion Trends */
     {
       id: '1',
@@ -116,8 +113,13 @@ Capsule Wardrobe Color Strategy
     },
   ]);
 
+  // Adds a new article to the top of the list
+  const addArticle = (article) => {
+    setArticles(prev => [article, ...prev]);
+  };
+
   return (
-    <ArticlesContext.Provider value={{ articles }}>
+    <ArticlesContext.Provider value={{ articles, addArticle }}>
       {children}
     </ArticlesContext.Provider>
   );

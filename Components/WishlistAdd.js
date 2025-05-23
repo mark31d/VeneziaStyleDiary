@@ -1,3 +1,4 @@
+// src/screens/WishlistAdd.js
 import React, { useState } from 'react';
 import {
   View,
@@ -12,26 +13,34 @@ import {
   Alert,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useWishlist } from '../Components/WishlistContext';
 
-import { useWishlist } from '../Components/WishlistContext';         
+/* ─── Venetian palette ─── */
+const VENETIAN_RED = '#C80815';
+const CANAL_TEAL   = '#007073';
+const STONE_BISQUE = '#E5C8A9';
 
 /* доступные категории – можно расширять */
 const CATEGORIES = ['Clothes', 'Shoes', 'Accessories'];
+/* приоритет покупки */
+const PRIORITIES = ['Low', 'Medium', 'High'];
 
 export default function WishlistAdd({ route, navigation }) {
-  /* если пришли из вкладки “Bought”, сразу сохраняем в купленное */
   const { toPurchased = false } = route.params ?? {};
-  const { addItem }   = useWishlist();
+  const { addItem }             = useWishlist();
+  const insets                  = useSafeAreaInsets();
 
-  const insets              = useSafeAreaInsets();
-  const [cover, setCover]   = useState(null);     // URI картинки
-  const [title, setTitle]   = useState('');
-  const [price, setPrice]   = useState('');
-  const [cat,   setCat]     = useState(null);     // выбранная категория
+  const [cover, setCover]       = useState(null);
+  const [title, setTitle]       = useState('');
+  const [price, setPrice]       = useState('');
+  const [cat, setCat]           = useState(null);
+  const [priority, setPriority] = useState('Medium');
+  const [deadline, setDeadline] = useState(new Date());
+  const [showPicker, setShowPicker] = useState(false);
 
-  /* ---------- открыть галерею ---------- */
   const pickImage = () =>
     launchImageLibrary(
       { mediaType: 'photo', quality: 0.8 },
@@ -46,17 +55,31 @@ export default function WishlistAdd({ route, navigation }) {
       },
     );
 
-  /* ---------- сохранить ---------- */
+  const onChangeDeadline = (_, selectedDate) => {
+    setShowPicker(false);
+    if (selectedDate) setDeadline(selectedDate);
+  };
+
   const save = () => {
-    if (!title || !price || !cat) {
-      Alert.alert('Please fill all the fields');
+    if (!title.trim() || !price.trim() || !cat) {
+      Alert.alert('Заполните все поля, включая категорию');
       return;
     }
-    addItem({ cover, title, price, category: cat }, toPurchased);
+    const now = new Date().toISOString();
+       addItem(
+         {
+           cover,
+           title: title.trim(),
+           price: price.trim(),
+           category: cat,
+           priority,
+           date: now,              // ← передаём дату создания
+         },
+         toPurchased
+       );
     navigation.goBack();
   };
 
-  /* ---------- UI ---------- */
   return (
     <KeyboardAvoidingView
       style={styles.screen}
@@ -75,7 +98,7 @@ export default function WishlistAdd({ route, navigation }) {
             style={styles.backIcon}
           />
         </TouchableOpacity>
-        <Text style={styles.hTitle}>New object</Text>
+        <Text style={styles.hTitle}>New item</Text>
       </View>
 
       {/* Form */}
@@ -83,18 +106,17 @@ export default function WishlistAdd({ route, navigation }) {
         {/* Cover */}
         <Text style={styles.label}>Cover</Text>
         <TouchableOpacity style={ui.cover} onPress={pickImage}>
-          {cover ? (
-            <Image source={{ uri: cover }} style={ui.cover} />
-          ) : (
-            <Text style={ui.plus}>+</Text>
-          )}
+          {cover
+            ? <Image source={{ uri: cover }} style={ui.cover} />
+            : <Text style={ui.plus}>＋</Text>
+          }
         </TouchableOpacity>
 
         {/* Title */}
         <Text style={styles.label}>Title</Text>
         <TextInput
           placeholder="Enter title"
-          placeholderTextColor="#888"
+          placeholderTextColor={CANAL_TEAL}
           value={title}
           onChangeText={setTitle}
           style={ui.input}
@@ -104,14 +126,14 @@ export default function WishlistAdd({ route, navigation }) {
         <Text style={styles.label}>Price</Text>
         <TextInput
           placeholder="Enter price"
-          placeholderTextColor="#888"
+          placeholderTextColor={CANAL_TEAL}
           keyboardType="numeric"
           value={price}
           onChangeText={setPrice}
           style={ui.input}
         />
 
-        {/* Category (чипы) */}
+        {/* Category */}
         <Text style={styles.label}>Category</Text>
         <View style={ui.chipRow}>
           {CATEGORIES.map(c => (
@@ -128,16 +150,57 @@ export default function WishlistAdd({ route, navigation }) {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Priority */}
+        <Text style={styles.label}>Priority</Text>
+        <View style={ui.chipRow}>
+          {PRIORITIES.map(p => (
+            <TouchableOpacity
+              key={p}
+              activeOpacity={0.8}
+              onPress={() => setPriority(p)}
+              style={[
+                priorityChips.base,
+                priority === p && priorityChips.sel[p],
+              ]}
+            >
+              <Text style={[
+                priorityChips.txt,
+                priority === p && priorityChips.selTxt[p]
+              ]}>{p}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Deadline (новая фича) */}
+        <Text style={styles.label}>Deadline</Text>
+        <TouchableOpacity
+          style={ui.deadlineContainer}
+          onPress={() => setShowPicker(true)}
+        >
+          <Text style={ui.deadlineText}>
+            {deadline.toLocaleDateString()}
+          </Text>
+        </TouchableOpacity>
+        {showPicker && (
+          <DateTimePicker
+            value={deadline}
+            mode="date"
+            display="default"
+            minimumDate={new Date()}
+            onChange={onChangeDeadline}
+          />
+        )}
       </ScrollView>
 
-      {/* Save button */}
+      {/* Continue */}
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={save}
         style={{ marginBottom: insets.bottom + 10 }}
       >
         <LinearGradient
-          colors={['#FFDF5F', '#FFB84C']}
+          colors={[CANAL_TEAL, VENETIAN_RED]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={ui.btn}
@@ -149,25 +212,38 @@ export default function WishlistAdd({ route, navigation }) {
   );
 }
 
-/* ───────── STYLES ───────── */
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#0D0D0D' },
+  screen: { flex: 1, backgroundColor: STONE_BISQUE },
 
-  /* header */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#272727',
+    backgroundColor: CANAL_TEAL,
     paddingHorizontal: 20,
   },
-  hTitle:   { flex: 1, color: '#fff', fontSize: 26, fontWeight: '700', textAlign: 'center' },
-  backIcon: { width: 22, height: 22, tintColor: '#fff', resizeMode: 'contain' },
+  hTitle: {
+    flex: 1,
+    color: STONE_BISQUE,
+    fontSize: 26,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  backIcon: {
+    width: 22,
+    height: 22,
+    tintColor: STONE_BISQUE,
+    resizeMode: 'contain',
+  },
 
-  /* labels */
-  label: { color: '#fff', fontSize: 14, marginBottom: 6, marginTop: 10 },
+  label: {
+    color: VENETIAN_RED,
+    fontSize: 14,
+    marginBottom: 6,
+    marginTop: 10,
+    fontWeight: '600',
+  },
 });
 
-/* элементы формы */
 const ui = StyleSheet.create({
   cover: {
     width: '100%',
@@ -177,19 +253,44 @@ const ui = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 14,
-    overflow: 'hidden',           // изображение точно не “вылезет” из рамок
+    overflow: 'hidden',
   },
-  plus: { fontSize: 36, color: '#FFCC3A' },
+  plus: {
+    fontSize: 36,
+    color: VENETIAN_RED,
+  },
 
   input: {
     backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: CANAL_TEAL,
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 48,
     color: '#000',
   },
 
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 6,
+  },
+
+  deadlineContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderColor: VENETIAN_RED,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+  },
+  deadlineText: {
+    color: VENETIAN_RED,
+    fontSize: 16,
+    fontWeight: '600',
+  },
 
   btn: {
     height: 56,
@@ -198,21 +299,60 @@ const ui = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  btnTxt: { color: '#1A1A1A', fontSize: 18, fontWeight: '700' },
+  btnTxt: {
+    color: STONE_BISQUE,
+    fontSize: 18,
+    fontWeight: '700',
+  },
 });
 
-/* чипы */
 const chips = StyleSheet.create({
   base: {
     borderRadius: 22,
     paddingVertical: 6,
     paddingHorizontal: 20,
     borderWidth: 1,
-    borderColor: '#FFDF5F',
+    borderColor: CANAL_TEAL,
     marginRight: 10,
     marginBottom: 10,
   },
-  sel: { backgroundColor: '#FFDF5F', borderWidth: 0 },
-  txt: { color: '#fff', fontSize: 14 },
-  selTxt: { color: '#1A1A1A', fontSize: 14, fontWeight: '600' },
+  sel: {
+    backgroundColor: CANAL_TEAL,
+    borderColor: CANAL_TEAL,
+  },
+  txt: {
+    color: VENETIAN_RED,
+    fontSize: 14,
+  },
+  selTxt: {
+    color: STONE_BISQUE,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
+
+const priorityChips = StyleSheet.create({
+  base: {
+    borderRadius: 22,
+    paddingVertical: 6,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: CANAL_TEAL,
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  sel: {       
+    Low:    { backgroundColor: CANAL_TEAL, borderColor: CANAL_TEAL },
+    Medium: { backgroundColor: "orange", borderColor:  "orange" },
+    High:   { backgroundColor: VENETIAN_RED, borderColor: VENETIAN_RED },
+  },
+  txt: {
+    color: CANAL_TEAL,
+    fontSize: 14,
+  },
+  selTxt: {
+    Low:    { color: STONE_BISQUE, fontSize: 14, fontWeight: '600' },
+    Medium: { color: CANAL_TEAL, fontSize: 14, fontWeight: '600' },
+    High:   { color: STONE_BISQUE, fontSize: 14, fontWeight: '600' },
+  },
 });

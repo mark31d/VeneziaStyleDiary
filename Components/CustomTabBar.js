@@ -11,21 +11,25 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view'; // ← обязательно
+import MaskedView from '@react-native-masked-view/masked-view';
 
-/* ───── константы ───── */
-const { width }   = Dimensions.get('window');
-const BG          = '#262626';
-const ACTIVE_CLR  = '#FFC83A';
-const INACTIVE_CLR= '#FFFFFF';
-const GRADIENT    = ['#FFDF5F', '#FFB84C'];          // ← ваш градиент
+/* ─── Venetian palette ─── */
+const VENETIAN_RED  = '#C80815';
+const CANAL_TEAL    = '#007073';
+const STONE_BISQUE  = '#E5C8A9';
+
+/* ───── constants ───── */
+const { width }     = Dimensions.get('window');
+const BG            = CANAL_TEAL;                // background of tab bar
+const ACTIVE_CLR    = VENETIAN_RED;              // indicator line color
+const INACTIVE_CLR  = STONE_BISQUE;              // inactive icon/text color
+const GRADIENT      = [VENETIAN_RED, STONE_BISQUE]; // gradient for active icon/text
 
 export default function CustomTabBar({ state, navigation }) {
   const insets     = useSafeAreaInsets();
   const TAB_WIDTH  = width / state.routes.length;
   const indicatorX = useRef(new Animated.Value(state.index)).current;
 
-  /* анимация индикатора */
   useEffect(() => {
     Animated.timing(indicatorX, {
       toValue: state.index,
@@ -46,25 +50,30 @@ export default function CustomTabBar({ state, navigation }) {
         { paddingBottom: insets.bottom, height: 80 + insets.bottom },
       ]}
     >
-      {/* тонкая ЗОЛОТАЯ полоска-индикатор (без градиента) */}
+      {/* Indicator line below active tab */}
       <Animated.View
         style={[
           styles.line,
           {
             backgroundColor: ACTIVE_CLR,
-            transform: [{ translateX }],
             width: TAB_WIDTH,
+            transform: [{ translateX }],
           },
         ]}
       />
 
-      {/* однотонная «плашка» под активной вкладкой */}
+      {/* Background pill under active tab */}
       <Animated.View
         style={[
           styles.activeBg,
           {
             width: TAB_WIDTH - 24,
-            transform: [{ translateX: Animated.add(translateX, new Animated.Value(12)) }],
+            backgroundColor: STONE_BISQUE,
+            transform: [
+              {
+                translateX: Animated.add(translateX, new Animated.Value(12)),
+              },
+            ],
           },
         ]}
       />
@@ -72,23 +81,25 @@ export default function CustomTabBar({ state, navigation }) {
       {state.routes.map((route, index) => {
         const isFocused = state.index === index;
 
-        /* ——— иконки ——— */
         let icon;
         switch (route.name) {
-          case 'Looks':     icon = require('../assets/outfits.png');  break;
-          case 'Wishlist':  icon = require('../assets/wishlist.png'); break;
-          case 'Articles':  icon = require('../assets/articles.png'); break;
-          case 'Game':
-          case 'Quiz':      icon = require('../assets/quiz.png');     break;
-          default:          icon = null;
+          case 'Looks':    icon = require('../assets/outfits.png');  break;
+          case 'Wishlist': icon = require('../assets/wishlist.png'); break;
+          case 'Articles': icon = require('../assets/articles.png'); break;
+          case 'Quiz':     icon = require('../assets/quiz.png');     break;
+          default:         icon = null;
         }
 
         const onPress = () => {
-          const e = navigation.emit({ type: 'tabPress', target: route.key });
-          if (!e.defaultPrevented) navigation.navigate(route.name);
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+          });
+          if (!event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
         };
 
-        /* ——— JSX одной вкладки ——— */
         return (
           <TouchableOpacity
             key={route.key}
@@ -96,14 +107,10 @@ export default function CustomTabBar({ state, navigation }) {
             onPress={onPress}
             activeOpacity={0.8}
           >
-            {/* ------ Иконка ------ */}
+            {/* Icon */}
             {icon && (
               isFocused ? (
-                <MaskedView
-                  maskElement={
-                    <Image source={icon} style={styles.icon} resizeMode="contain" />
-                  }
-                >
+                <MaskedView maskElement={<Image source={icon} style={styles.icon} />}>
                   <LinearGradient colors={GRADIENT} style={styles.icon} />
                 </MaskedView>
               ) : (
@@ -111,24 +118,24 @@ export default function CustomTabBar({ state, navigation }) {
               )
             )}
 
-            {/* ------ Подпись ------ */}
+            {/* Label using route.name */}
             {isFocused ? (
               <MaskedView
                 maskElement={
                   <Text style={[styles.label, { color: 'black' }]}>
-                    {route.options?.title ?? route.name}
+                    {route.name}
                   </Text>
                 }
               >
                 <LinearGradient colors={GRADIENT}>
                   <Text style={[styles.label, { opacity: 0 }]}>
-                    {route.options?.title ?? route.name}
+                    {route.name}
                   </Text>
                 </LinearGradient>
               </MaskedView>
             ) : (
               <Text style={[styles.label, { color: INACTIVE_CLR }]}>
-                {route.options?.title ?? route.name}
+                {route.name}
               </Text>
             )}
           </TouchableOpacity>
@@ -138,7 +145,6 @@ export default function CustomTabBar({ state, navigation }) {
   );
 }
 
-/* ───── С Т И Л И ───── */
 const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
@@ -157,7 +163,6 @@ const styles = StyleSheet.create({
     top: 8,
     height: 56,
     borderRadius: 16,
-    backgroundColor: '#1F1F1F',
   },
   tabItem: {
     alignItems: 'center',
